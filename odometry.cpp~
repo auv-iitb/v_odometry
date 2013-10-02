@@ -98,16 +98,24 @@ fy=1000.3;
     switch(feature)
     {
      case 1: 
-     {FastFeatureDetector detector(130);
-      detector.detect(img1, keypoints1);
-      detector.detect(img2, keypoints2);
-     break;
-     }
-     case 2: 
-     {SurfFeatureDetector detector(130);
+     {int threshold=130;
+     FastFeatureDetector detector(threshold);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
+     }
+     case 2: 
+     {SurfFeatureDetector detector(2000);
+     detector.detect(img1, keypoints1);
+     detector.detect(img2, keypoints2);
+     break;
+     }
+     case 3:
+     {int maxCorners=150;
+      GoodFeaturesToTrackDetector detector(maxCorners);
+      detector.detect(img1, keypoints1);
+      detector.detect(img2, keypoints2);
+      break;
      }
     }
    
