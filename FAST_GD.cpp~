@@ -141,6 +141,17 @@ for(size_t i = 0; i < N; i++)
 
 }
 
+// Transformation Matrix calculation
+/*
+P=new float [N]; 
+K=new float [N];
+
+for(size_t i = 0; i < N; i++){
+P[i]=cphi*A_mat(i,0)-sphi*A_mat(i,1)-B_mat(i,0); //(Dx/Z)
+K[i]=sphi*A_mat(i,0)+cphi*A_mat(i,1)-B_mat(i,1);//(Dy/Z)
+}
+*/
+
 // Finding least square error using Gradient Descent Method 
 // x_vect={Dx,Dy,phi,Z} and x(n+1)=x(n)-grad(f(x(n)))
 // f(x)=sum{i=1 to N}[(Dx-Z(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))^2] + sum{i=1 to N}[(Dy-Z(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))^2]
