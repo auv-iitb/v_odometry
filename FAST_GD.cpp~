@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <time.h>
 #include <stdio.h>
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
@@ -53,6 +54,8 @@ float df_dZ(float Dx,float Dy, float phi, float Z, float **A, float **B, int N)
 
 int main(int argc, char** argv)
 {
+clock_t time;
+time=clock();
 int N,count;
 float *u_old,*v_old,*u_new,*v_new;
 float *X_old,*Y_old,*X_new,*Y_new;
@@ -157,7 +160,7 @@ for(size_t i = 0; i < N; i++){
 
 // Iterate x_vect={Dx,Dy,phi,Z} using gradient functions until error<0.01 or count>100
 count=0;
-gm=0.0001;
+gm=0.005; //optimum gm=0.005, total_program_time=0.05 s, e>=0.01, only 1 common gradient descent
 while(e>=0.01){
 	count++;
 //Old x_vect={Dx,Dy,phi,Z}
@@ -177,8 +180,11 @@ while(e>=0.01){
 //cout<<e<<"\t";
 }
 
-cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
+time=clock()-time;
+//cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
 cout<<e<<"\n"<<count<<"\n";
+cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
+
 /*
     // drawing the rmatches
     namedWindow("matches", 1);
