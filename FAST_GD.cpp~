@@ -1,10 +1,10 @@
 #include <iostream>
 #include <cmath>
 #include <stdio.h>
-#include "include/opencv2/core/core.hpp"
-#include "include/opencv2/features2d/features2d.hpp"
-#include "include/opencv2/highgui/highgui.hpp"
-#include "include/opencv2/nonfree/nonfree.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/nonfree/nonfree.hpp"
 
 using namespace std;
 using namespace cv;
@@ -140,17 +140,6 @@ for(size_t i = 0; i < N; i++)
     B[i][2] = 1;
 
 }
-
-// Transformation Matrix calculation
-/*
-P=new float [N]; 
-K=new float [N];
-
-for(size_t i = 0; i < N; i++){
-P[i]=cphi*A_mat(i,0)-sphi*A_mat(i,1)-B_mat(i,0); //(Dx/Z)
-K[i]=sphi*A_mat(i,0)+cphi*A_mat(i,1)-B_mat(i,1);//(Dy/Z)
-}
-*/
 
 // Finding least square error using Gradient Descent Method 
 // x_vect={Dx,Dy,phi,Z} and x(n+1)=x(n)-grad(f(x(n)))

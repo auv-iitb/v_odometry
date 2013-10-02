@@ -1,10 +1,10 @@
 #include <iostream>
 #include <cmath>
 #include <stdio.h>
-#include "include/opencv2/core/core.hpp"
-#include "include/opencv2/features2d/features2d.hpp"
-#include "include/opencv2/highgui/highgui.hpp"
-#include "include/opencv2/nonfree/nonfree.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/nonfree/nonfree.hpp"
 
 using namespace std;
 using namespace cv;
