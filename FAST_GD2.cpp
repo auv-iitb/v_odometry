@@ -166,12 +166,25 @@ while(e>=0.01){
 //Old x_vect={Dx,Dy,phi,Z}
  Dx_o=Dx;Dy_o=Dy;phi_o=phi;Z_o=Z;
 
-//New x_vect={Dx,Dy,phi,Z}
- Dx=Dx_o-gm*df_dDx(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
- Dy=Dy_o-gm*df_dDy(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
- phi=phi_o-gm*df_dphi(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+ //Iterate only Z
+ //Dx_o=Dx;Dy_o=Dy;phi_o=phi;
  Z=Z_o-gm*df_dZ(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
-
+ Z_o=Z;
+ 
+ int icount=0;
+ while(e>=0.01&&icount<100){ icount++;
+  Dx_o=Dx;Dy_o=Dy;phi_o=phi;
+  //Iterate over Dx,Dy,phi keeping Z const
+  Dx=Dx_o-gm*df_dDx(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+  Dy=Dy_o-gm*df_dDy(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+  phi=phi_o-gm*df_dphi(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+  // Find error
+  e=0;
+  for(size_t i = 0; i < N; i++){
+  e =e+(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))*(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))+(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))*(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]));
+  }
+ }
+ 
 // Find error
  e=0;
  for(size_t i = 0; i < N; i++){
