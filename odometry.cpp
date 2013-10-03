@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 {
 clock_t time;
 time=clock();
-int N,count,feature,match,solver;
+int N,count,feature,extract,match,solver;
 float *u_old,*v_old,*u_new,*v_new;
 float *X_old,*Y_old,*X_new,*Y_new;
 float *P,*K;
@@ -71,13 +71,15 @@ float Tr[3][3];
 
 //Default option values (best working values)
 feature=1;
+extract=1;
 match=1;
 solver=1;
 //Argument input for option selection
-if (argc>=6){
+if (argc>=7){
  feature=atoi(argv[3]);
- match=atoi(argv[4]);
- solver=atoi(argv[5]);
+ extract=atoi(argv[4]);
+ match=atoi(argv[5]);
+ solver=atoi(argv[6]);
 }
 // Intrinsic Calibration parameters for img size 320x240
 uo=321.2;
@@ -97,20 +99,20 @@ fy=1000.3;
     vector<KeyPoint> keypoints1, keypoints2;
     switch(feature)
     {
-     case 1: 
+     case 1: //FAST
      {int threshold=130;
      FastFeatureDetector detector(threshold);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
-     case 2: 
+     case 2: //SURF
      {SurfFeatureDetector detector(2000);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
-     case 3:
+     case 3: //GFTT
      {int maxCorners=150;
       GoodFeaturesToTrackDetector detector(maxCorners);
       detector.detect(img1, keypoints1);
@@ -120,30 +122,65 @@ fy=1000.3;
     }
    
     // computing descriptors
-    SurfDescriptorExtractor extractor;
     Mat descriptors1, descriptors2;
-    extractor.compute(img1, keypoints1, descriptors1);
-    extractor.compute(img2, keypoints2, descriptors2);
-
+    switch(extract)
+    {
+     case 1: //SURF
+     {
+      SurfDescriptorExtractor extractor;
+      extractor.compute(img1, keypoints1, descriptors1);
+      extractor.compute(img2, keypoints2, descriptors2);
+      break;
+     }
+     case 2: //SIFT
+     {
+      SiftDescriptorExtractor extractor;
+      extractor.compute(img1, keypoints1, descriptors1);
+      extractor.compute(img2, keypoints2, descriptors2);
+      break;
+     }
+    }
+    
     // matching descriptors
     vector<DMatch> matches;
     switch (match)
     {
-     case 1:
+     case 1: //BruteForce
      {
      BFMatcher matcher(NORM_L2);
      matcher.match(descriptors1, descriptors2, matches);
      break;
      }
-     case 2:
+     case 2: //Flann
      {
      FlannBasedMatcher matcher;
      matcher.match(descriptors1, descriptors2, matches);
      break;
      }
     }
-    N=matches.size();  // no of matched feature points
     
+  //look whether the match is inside a defined area of the image
+  //only 25% of maximum of possible distance
+double tresholdDist = 0.25*sqrt(double(img1.size().height*img1.size().height + img1.size().width*img1.size().width));
+
+vector< DMatch > good_matches;
+good_matches.reserve(matches.size());  
+for (size_t i = 0; i < matches.size(); ++i)
+{
+  Point2f from = keypoints1[matches[i].queryIdx].pt;
+  Point2f to = keypoints2[matches[i].trainIdx].pt;
+  //calculate local distance for each possible match
+  double dist = sqrt((from.x - to.x) * (from.x - to.x) + (from.y - to.y) * (from.y - to.y));
+  //save as best match if local distance is in specified area and on same height
+  if (dist < tresholdDist)
+     {
+      good_matches.push_back(matches[i]);
+     }
+}
+
+ matches=good_matches; // update matches by good_matches
+ N=matches.size();  // no of matched feature points   
+
 // Old and new consecutive frames pixel coordinate
 u_old=new float [N]; 
 v_old=new float [N];
@@ -206,9 +243,9 @@ while(e>=0.01){
  Dx_o=Dx;Dy_o=Dy;phi_o=phi;Z_o=Z;
 switch (solver)
 {
- case 1: gm=0.005;
+ case 1: gm=0.005; // Gradient Descent
  break;
- case 2: gm=1/e;
+ case 2: gm=1/e; // Newton-Raphson
  break;
 }
  
@@ -231,13 +268,13 @@ cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
 cout<<e<<"\n"<<count<<"\n";
 cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
-/*
+
     // drawing the rmatches
     namedWindow("matches", 1);
     Mat img_matches;
     drawMatches(img1, keypoints1, img2, keypoints2, matches, img_matches);
     imshow("matches", img_matches);
     waitKey(0);
-*/
+
     return 0;
 }
