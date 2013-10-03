@@ -119,6 +119,19 @@ fy=1000.3;
       detector.detect(img2, keypoints2);
       break;
      }
+     case 4: //ORB
+     {int maxCorners=150;
+      OrbFeatureDetector detector(maxCorners);
+      detector.detect(img1, keypoints1);
+      detector.detect(img2, keypoints2);     
+      break;
+     }
+     case 5: //Harris  (change threshold, presently some default threshold)
+     {
+      Ptr<FeatureDetector> detector= FeatureDetector::create("HARRIS");
+      detector->detect(img1, keypoints1);
+      detector->detect(img2, keypoints2);      
+     }     
     }
    
     // computing descriptors
@@ -139,6 +152,13 @@ fy=1000.3;
       extractor.compute(img2, keypoints2, descriptors2);
       break;
      }
+     case 3: //ORB
+     {
+      OrbDescriptorExtractor extractor;
+      extractor.compute(img1, keypoints1, descriptors1);
+      extractor.compute(img2, keypoints2, descriptors2);
+      break;
+     }     
     }
     
     // matching descriptors
