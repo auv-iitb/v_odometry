@@ -104,7 +104,7 @@ float Tr[3][3];
       return -1;
     }
 
-//Default option values (best working values)
+//Default option values
 feature=1;
 extract=1;
 match=1;
@@ -222,8 +222,8 @@ fy=1000.3;
     { 
      case 1:
      {
-     double distance=3.;
-     double confidence=0.99;
+     double distance=50.; //quite adjustable/variable
+     double confidence=0.99; //doesnt affect much when changed
      ransacTest(matches,keypoints1,keypoints2,good_matches,distance,confidence); 
      break;
      }
@@ -248,27 +248,7 @@ fy=1000.3;
      break;	
      }	
     }
-/*    
-  //look whether the match is inside a defined area of the image
-  //only 25% of maximum of possible distance
-double tresholdDist = 0.25*sqrt(double(img1.size().height*img1.size().height + img1.size().width*img1.size().width));
 
-vector< DMatch > good_matches;
-good_matches.reserve(matches.size());  
-for (size_t i = 0; i < matches.size(); ++i)
-{
-  Point2f from = keypoints1[matches[i].queryIdx].pt;
-  Point2f to = keypoints2[matches[i].trainIdx].pt;
-  //calculate local distance for each possible match
-  double dist = sqrt((from.x - to.x) * (from.x - to.x) + (from.y - to.y) * (from.y - to.y));
-  //save as best match if local distance is in specified area and on same height
-  if (dist < tresholdDist)
-     {
-      good_matches.push_back(matches[i]);
-     }
-}
-
-*/
  matches=good_matches; // update matches by good_matches
  N=matches.size();  // no of matched feature points   
 
