@@ -93,11 +93,8 @@ clock_t time;
 time=clock();
 int N,count,feature,extract,match,outlier,solver;
 float *u_old,*v_old,*u_new,*v_new;
-float *X_old,*Y_old,*X_new,*Y_new;
-float *P,*K;
 float **A,**B;
 float uo,vo,fx,fy,Z,Dx,Dy,phi,e,Dx_o,Dy_o,phi_o,Z_o,gm;
-float Tr[3][3];
 
     if(argc < 3)
     { help();
@@ -257,11 +254,7 @@ u_old=new float [N];
 v_old=new float [N];
 u_new=new float [N];
 v_new=new float [N];
-// Old and new consecutive frames 3D coordinate
-X_old=new float [N]; 
-Y_old=new float [N];
-X_new=new float [N];
-Y_new=new float [N];
+
 A=new float* [N]; //old [X/Z Y/Z 1]
 B=new float* [N]; //new [Xn/Z Yn/Z 1]
 

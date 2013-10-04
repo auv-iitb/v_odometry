@@ -93,11 +93,8 @@ clock_t time;
 time=clock();
 int N,count,feature,extract,match,outlier,solver;
 float *u_old,*v_old,*u_new,*v_new;
-float *X_old,*Y_old,*X_new,*Y_new;
-float *P,*K;
 float **A,**B;
 float uo,vo,fx,fy,Z,Dx,Dy,phi,e,Dx_o,Dy_o,phi_o,Z_o,gm;
-float Tr[3][3];
 
     if(argc < 3)
     { help();
@@ -257,11 +254,7 @@ u_old=new float [N];
 v_old=new float [N];
 u_new=new float [N];
 v_new=new float [N];
-// Old and new consecutive frames 3D coordinate
-X_old=new float [N]; 
-Y_old=new float [N];
-X_new=new float [N];
-Y_new=new float [N];
+
 A=new float* [N]; //old [X/Z Y/Z 1]
 B=new float* [N]; //new [Xn/Z Yn/Z 1]
 
@@ -305,9 +298,9 @@ for(size_t i = 0; i < N; i++){
  e =e+(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))*(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))+(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))*(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]));
 }
 
-// Iterate x_vect={Dx,Dy,phi,Z} using gradient functions until error<0.01 or count>100
+// Iterate x_vect={Dx,Dy,phi,Z} using gradient functions until error<0.01
 count=0;
-//gm=0.005; //optimum gm=0.005, total_program_time=0.05 s, e>=0.01, only 1 common gradient descent
+//gm=0.005;
 while(e>=0.01){
 	count++;
 //Old x_vect={Dx,Dy,phi,Z}
