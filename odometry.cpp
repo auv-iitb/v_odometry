@@ -68,6 +68,7 @@ void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyP
         y= keypoints2[it->trainIdx].pt.y;
         points2.push_back(cv::Point2f(x,y));
     }
+    
     // Compute F matrix using RANSAC
     std::vector<uchar> inliers(points1.size(),0);
     cv::Mat fundemental= cv::findFundamentalMat(cv::Mat(points1),cv::Mat(points2),inliers,FM_RANSAC,distance,confidence); // confidence probability

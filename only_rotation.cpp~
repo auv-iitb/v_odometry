@@ -68,7 +68,6 @@ void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyP
         y= keypoints2[it->trainIdx].pt.y;
         points2.push_back(cv::Point2f(x,y));
     }
-    
     // Compute F matrix using RANSAC
     std::vector<uchar> inliers(points1.size(),0);
     cv::Mat fundemental= cv::findFundamentalMat(cv::Mat(points1),cv::Mat(points2),inliers,FM_RANSAC,distance,confidence); // confidence probability
@@ -290,8 +289,10 @@ for(size_t i = 0; i < N; i++)
 // f(x)=sum{i=1 to N}[(Dx-Z(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))^2] + sum{i=1 to N}[(Dy-Z(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))^2]
 // grad(f(x))={df/dDx,df/dDy,df/dphi,df/dZ}
 
-//initial guess
-Dx=0;Dy=0;phi=0;Z=1; 
+//Fix Dx,Dy,Z as only ROTATION case
+Dx=0;Dy=0;Z=-1;
+//initial guess (for phi alone)
+phi=0.01;
 
 // Initial error
 e=0;
@@ -299,35 +300,30 @@ for(size_t i = 0; i < N; i++){
  e =e+(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))*(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))+(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))*(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]));
 }
 
-// Iterate x_vect={Dx,Dy,phi,Z} using gradient functions until error<0.01
+// Iterate over phi using gradient functions until error<0.01
 count=0;
 //gm=0.005;
 while(e>=0.01){
 	count++;
-//Old x_vect={Dx,Dy,phi,Z}
- Dx_o=Dx;Dy_o=Dy;phi_o=phi;Z_o=Z;
+//Old phi
+ phi_o=phi;
 switch (solver)
 {
- case 1: gm=0.005; // Gradient Descent
+ case 1: gm=0.001; // Gradient Descent
  break;
  case 2: gm=1/e; // Newton-Raphson
  break;
- case 3: gm=e; // check
- break; 
 }
  
-//New x_vect={Dx,Dy,phi,Z}
- Dx=Dx_o-gm*df_dDx(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
- Dy=Dy_o-gm*df_dDy(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
- phi=phi_o-gm*df_dphi(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
- Z=Z_o-gm*df_dZ(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
-
+//New phi
+ phi=phi_o-gm*df_dphi(Dx,Dy,phi_o,Z,A,B,N);
+ 
 // Find error
  e=0;
  for(size_t i = 0; i < N; i++){
  e =e+(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))*(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))+(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))*(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]));
  }
-//cout<<e<<"\t";
+cout<<e<<"\t";
 }
 
 time=clock()-time;
