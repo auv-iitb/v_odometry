@@ -7,6 +7,7 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/nonfree/nonfree.hpp"
+#include "opencv2/video/tracking.hpp"
 
 using namespace std;
 using namespace cv;
@@ -249,6 +250,24 @@ fy=1000.3;
  matches=good_matches; // update matches by good_matches
  N=matches.size();  // no of matched feature points   
 
+// estimateRigidTransform method to find rotation
+vector<Point> src,dst;
+    
+for(size_t i = 0; i < N; i++)
+{
+    Point2f point_1 = keypoints1[matches[i].queryIdx].pt;
+    Point2f point_2 = keypoints2[matches[i].trainIdx].pt;  
+    Point2f centre(uo,vo);  
+    point_1 = point_1-centre;
+    point_2 = point_2-centre;
+    src.push_back(point_1);
+    dst.push_back(point_2);    
+}
+Mat rot=estimateRigidTransform(src,dst,true);
+cout<<rot<<"\n";
+
+/*
+ 
 // Old and new consecutive frames pixel coordinate
 u_old=new float [N]; 
 v_old=new float [N];
@@ -332,6 +351,7 @@ cout<<e<<"\n"<<count<<"\n";
 cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
 
+*/
     // drawing the rmatches
     namedWindow("matches", 1);
     Mat img_matches;
