@@ -1,32 +1,9 @@
 #ifndef ONLY_ROTATION_HPP
 #define ONLY_ROTATION_HPP
-#include <iostream>
-#include <cmath>
-#include <time.h>
-#include <stdio.h>
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/core/core.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
-#include "opencv2/video/tracking.hpp"
+#include "visual_odometry.h"
 
 using namespace std;
 using namespace cv;
-
-class VisualOdometry{
-    public:
-        VisualOdometry();
-        cv::Mat getRotation(cv::Mat img);
-    private:
-        cv::Mat img1;
-        cv::Mat img2;
-
-};
-
-VisualOdometry::VisualOdometry(){
-
-}
 
 static void help()
 {
@@ -286,7 +263,6 @@ cv::Mat VisualOdometry::getRotation(cv::Mat img){
     Mat rot=estimateRigidTransform(src,dst,true);
     cout<<rot<<"\n";
 
-    return rot;
     /*
 
     // Old and new consecutive frames pixel coordinate
@@ -379,6 +355,8 @@ cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
     drawMatches(img1, keypoints1, img2, keypoints2, matches, img_matches);
     imshow("matches", img_matches);
     waitKey(0);
+
+    return rot;
 
 }
 #endif
