@@ -117,10 +117,10 @@ if (argc>=8){
  solver=atoi(argv[7]);
 }
 // Intrinsic Calibration parameters for img size 320x240
-uo=321.2;
-vo=241.6;
-fx=1000.2;
-fy=1000.3;
+uo=157.73985;
+vo=134.19819;
+fx=391.54809;
+fy=395.45221;
 
     Mat img1 = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
     Mat img2 = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
@@ -249,24 +249,25 @@ fy=1000.3;
 
  matches=good_matches; // update matches by good_matches
  N=matches.size();  // no of matched feature points   
-
+/*
 // estimateRigidTransform method to find rotation
-vector<Point> src,dst;
-    
-for(size_t i = 0; i < N; i++)
+std::vector<Point2f> src;
+std::vector<Point2f> dst;
+Point2f point_1,point_2;
+Point2f centre(uo,vo);
+
+for(size_t i = 0; i < 15; i++)
 {
-    Point2f point_1 = keypoints1[matches[i].queryIdx].pt;
-    Point2f point_2 = keypoints2[matches[i].trainIdx].pt;  
-    Point2f centre(uo,vo);  
+    point_1 = keypoints1[matches[i].queryIdx].pt;
+    point_2 = keypoints2[matches[i].trainIdx].pt;  
     point_1 = point_1-centre;
     point_2 = point_2-centre;
-    src.push_back(point_1);
-    dst.push_back(point_2);    
+   src.push_back(point_1);
+   dst.push_back(point_2);    
 }
-Mat rot=estimateRigidTransform(src,dst,true);
+Mat rot=estimateRigidTransform(src,dst,false);
 cout<<rot<<"\n";
-
-/*
+*/
  
 // Old and new consecutive frames pixel coordinate
 u_old=new float [N]; 
@@ -309,9 +310,9 @@ for(size_t i = 0; i < N; i++)
 // grad(f(x))={df/dDx,df/dDy,df/dphi,df/dZ}
 
 //Fix Dx,Dy,Z as only ROTATION case
-Dx=0;Dy=0;Z=-1;
+Dx=0;Dy=0;Z=1;
 //initial guess (for phi alone)
-phi=0.01;
+phi=0;
 
 // Initial error
 e=0;
@@ -321,14 +322,16 @@ for(size_t i = 0; i < N; i++){
 
 // Iterate over phi using gradient functions until error<0.01
 count=0;
+float e_old=0;
 //gm=0.005;
-while(e>=0.01){
+while(e>=0.01&&e_old!=e){
 	count++;
+	e_old=e;
 //Old phi
  phi_o=phi;
 switch (solver)
 {
- case 1: gm=0.001; // Gradient Descent
+ case 1: gm=0.1; // Gradient Descent
  break;
  case 2: gm=1/e; // Newton-Raphson
  break;
@@ -346,12 +349,12 @@ cout<<e<<"\t";
 }
 
 time=clock()-time;
-cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
+cout<<"\n"<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
 cout<<e<<"\n"<<count<<"\n";
 cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
 
-*/
+
     // drawing the rmatches
     namedWindow("matches", 1);
     Mat img_matches;
