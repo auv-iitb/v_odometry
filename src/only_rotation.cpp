@@ -1,3 +1,5 @@
+#ifndef ONLY_ROTATION_HPP
+#define ONLY_ROTATION_HPP
 #include <iostream>
 #include <cmath>
 #include <time.h>
@@ -11,6 +13,20 @@
 
 using namespace std;
 using namespace cv;
+
+class VisualOdometry{
+    public:
+        VisualOdometry();
+        cv::Mat getRotation(cv::Mat img);
+    private:
+        cv::Mat img1;
+        cv::Mat img2;
+
+};
+
+VisualOdometry::VisualOdometry(){
+
+}
 
 static void help()
 {
@@ -87,9 +103,9 @@ void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyP
     }
 }
 
-
-int main(int argc, char** argv)
-{
+//int main(int argc, char** argv)
+//{
+cv::Mat VisualOdometry::getRotation(cv::Mat img){
     clock_t time;
     time=clock();
     int N,count,feature,extract,match,outlier,solver;
@@ -97,10 +113,10 @@ int main(int argc, char** argv)
     float **A,**B;
     float uo,vo,fx,fy,Z,Dx,Dy,phi,e,Dx_o,Dy_o,phi_o,Z_o,gm;
 
-    if(argc < 3)
+    /*if(argc < 3)
     { help();
         return -1;
-    }
+    }*/
 
     //Default option values
     feature=1;
@@ -109,25 +125,29 @@ int main(int argc, char** argv)
     outlier=1;
     solver=1;
     //Argument input for option selection
-    if (argc>=8){
+    /*if (argc>=8){
         feature=atoi(argv[3]);
         extract=atoi(argv[4]);
         match=atoi(argv[5]);
         outlier=atoi(argv[6]); 
         solver=atoi(argv[7]);
-    }
+    }*/
     // Intrinsic Calibration parameters for img size 320x240
     uo=321.2;
     vo=241.6;
     fx=1000.2;
     fy=1000.3;
 
-    Mat img1 = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
-    Mat img2 = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
+    //Mat img1; //imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+    //Mat img2; //imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
+
+    img2 = img1;
+    img1 = img;
     if(img1.empty() || img2.empty())
     {
         printf("Can't read one of the images\n");
-        return -1;
+        cv::Mat null;
+        return null;
     }
 
     // detecting keypoints
@@ -266,6 +286,7 @@ int main(int argc, char** argv)
     Mat rot=estimateRigidTransform(src,dst,true);
     cout<<rot<<"\n";
 
+    return rot;
     /*
 
     // Old and new consecutive frames pixel coordinate
@@ -353,11 +374,11 @@ cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
 */
 // drawing the rmatches
-namedWindow("matches", 1);
-Mat img_matches;
-drawMatches(img1, keypoints1, img2, keypoints2, matches, img_matches);
-imshow("matches", img_matches);
-waitKey(0);
+    namedWindow("matches", 1);
+    Mat img_matches;
+    drawMatches(img1, keypoints1, img2, keypoints2, matches, img_matches);
+    imshow("matches", img_matches);
+    waitKey(0);
 
-return 0;
 }
+#endif
