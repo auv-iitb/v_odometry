@@ -71,6 +71,12 @@ int main(int argc, char** argv)
     fx=1000.2;
     fy=1000.3;
 
+    // Intrinsic Calibration parameters for img size 320x240
+    uo=157.73985;
+    vo=134.19819;
+    fx=391.54809;
+    fy=395.45221;
+
     if(argc != 3)
     {
         help();
