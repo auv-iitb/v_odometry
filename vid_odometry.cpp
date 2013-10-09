@@ -98,16 +98,22 @@ int main(int argc, char** argv)
     VideoCapture cap(1); //1 - open the non-default camera
     if(!cap.isOpened())  // check if we succeeded
         return -1;
+        
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
+            
     int ov_count=0;
+    float net_Dx,net_Dy,net_phi,net_Z1,net_Z2,Zsum,Rcos,Rsin;
+    net_Dx=0;net_Dy=0;net_phi=0;net_Z1=0;net_Z2=0;Zsum=0;
     Mat frame_old,frame;
     namedWindow("frames",1);
-    for(int i=0;i<10;i++)
+    for(int i=0;i<100;i++)
     {	
         cap >> frame; // get a new frame from camera
        	ov_count++;
         cvtColor(frame, frame, CV_BGR2GRAY);
         imshow("frames", frame);
-        if(waitKey(10) >= 0) break;// waitKey will bring unrqrd delay
+        if(waitKey(5) >= 0) break;// waitKey will bring unrqrd delay
         
         if(ov_count>=2){
         // odometry.cpp code 
@@ -373,14 +379,24 @@ cout<<"N="<<N<<"\t"<<"Dx="<<Dx<<"\t"<<"Dy="<<Dy<<"\t"<<"phi="<<phi<<"\t"<<"Z="<<
 cout<<"e="<<e<<"\t"<<"iteratn="<<count<<"\t";
 cout<<"time="<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
-        
+	Rcos=Dx*cos(phi)+Dy*sin(phi);
+	Rsin=Dx*sin(phi)-Dy*cos(phi);	
+	net_Dx=net_Dx+Rcos*cos(net_phi)-Rsin*sin(net_phi);
+	net_Dy=net_Dy+Rcos*sin(net_phi)+Rsin*cos(net_phi);	
+        net_phi=net_phi+phi;
+        Zsum=Zsum+Z;
+        net_Z1=Zsum/(ov_count-1);
+	  if(ov_count==2) net_Z2=Z;
+          else net_Z2=(net_Z2+Z)/2;
+	cout<<"Dx_net="<<net_Dx<<"\t"<<"Dy_net="<<net_Dy<<"\t"<<"phi_net="<<net_phi<<"\t"<<"Z_net1="<<net_Z1<<"\t";
+	cout<<"Z_net2="<<net_Z2<<"\n"<<"reso"<<frame.size()<<"\n";
         }
-        
     	frame_old=frame.clone();        
         imshow("frames_old", frame_old);    	
-        if(waitKey(10) >= 0) break;// waitKey will bring unrqrd delay        
+        if(waitKey(5) >= 0) break;// waitKey will bring unrqrd delay        
     }
     cap.release();
     // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;
 }
+
