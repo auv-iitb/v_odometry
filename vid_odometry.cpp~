@@ -1,3 +1,8 @@
+/*
+ * This program is used to test the odometry.cpp code using live video feed from a pre-calibrated camera. Outputs are camera translation in x and y, rotation angle  and depth of points in the image (assuming it to be same for all points)
+ * 
+ */
+
 #include <iostream>
 #include <cmath>
 #include <time.h>
@@ -12,10 +17,6 @@
 using namespace std;
 using namespace cv;
 
-static void help()
-{
-    printf("Usage:\n ./a.out <image1> <image2>\n");
-}
 
 float df_dDx(float Dx, float Dy, float phi, float Z, float **A, float **B, int N)
 {
@@ -60,15 +61,16 @@ void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyP
     std::vector<cv::Point2f> points1, points2;
     for (std::vector<cv::DMatch>::const_iterator it= matches.begin();it!= matches.end(); ++it)
     {
-        // Get the position of left keypoints
+        // Get the position of old img keypoints
         float x= keypoints1[it->queryIdx].pt.x;
         float y= keypoints1[it->queryIdx].pt.y;
         points1.push_back(cv::Point2f(x,y));
-        // Get the position of right keypoints
+        // Get the position of new img keypoints
         x= keypoints2[it->trainIdx].pt.x;
         y= keypoints2[it->trainIdx].pt.y;
         points2.push_back(cv::Point2f(x,y));
     }
+    
     // Compute F matrix using RANSAC
     std::vector<uchar> inliers(points1.size(),0);
     cv::Mat fundemental= cv::findFundamentalMat(cv::Mat(points1),cv::Mat(points2),inliers,FM_RANSAC,distance,confidence); // confidence probability
@@ -88,19 +90,33 @@ void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyP
 }
 
 
+
 int main(int argc, char** argv)
 {
-clock_t time;
+    VideoCapture cap(1); //1 - open the non-default camera
+    if(!cap.isOpened())  // check if we succeeded
+        return -1;
+    int ov_count=0;
+    Mat frame_old,frame;
+    namedWindow("frames",1);
+    for(int i=0;i<10;i++)
+    {	
+        cap >> frame; // get a new frame from camera
+       	ov_count++;
+        cvtColor(frame, frame, CV_BGR2GRAY);
+        imshow("frames", frame);
+        if(waitKey(10) >= 0) break;// waitKey will bring unrqrd delay
+        
+        if(ov_count>=2){
+        // odometry.cpp code 
+        // new image=frame & old image= frame_old
+
+clock_t time;        
 time=clock();
 int N,count,feature,extract,match,outlier,solver;
 float *u_old,*v_old,*u_new,*v_new;
 float **A,**B;
 float uo,vo,fx,fy,Z,Dx,Dy,phi,e,Dx_o,Dy_o,phi_o,Z_o,gm;
-
-    if(argc < 3)
-    { help();
-      return -1;
-    }
 
 //Default option values
 feature=1;
@@ -109,12 +125,12 @@ match=1;
 outlier=1;
 solver=1;
 //Argument input for option selection
-if (argc>=8){
- feature=atoi(argv[3]);
- extract=atoi(argv[4]);
- match=atoi(argv[5]);
- outlier=atoi(argv[6]); 
- solver=atoi(argv[7]);
+if (argc==6){
+ feature=atoi(argv[1]);
+ extract=atoi(argv[2]);
+ match=atoi(argv[3]);
+ outlier=atoi(argv[4]); 
+ solver=atoi(argv[5]);
 }
 // Intrinsic Calibration parameters for img size 320x240
 uo=157.73985;
@@ -122,8 +138,8 @@ vo=134.19819;
 fx=391.54809;
 fy=395.45221;
 
-    Mat img1 = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
-    Mat img2 = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
+    Mat img1 = frame_old;
+    Mat img2 = frame;
     if(img1.empty() || img2.empty())
     {
         printf("Can't read one of the images\n");
@@ -135,27 +151,27 @@ fy=395.45221;
     switch(feature)
     {
      case 1: //FAST
-     {int threshold=130;
+     {int threshold=110;
      FastFeatureDetector detector(threshold);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
      case 2: //SURF
-     {SurfFeatureDetector detector(2000);
+     {SurfFeatureDetector detector(3000);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
      case 3: //GFTT
-     {int maxCorners=150;
+     {int maxCorners=200;
       GoodFeaturesToTrackDetector detector(maxCorners);
       detector.detect(img1, keypoints1);
       detector.detect(img2, keypoints2);
       break;
      }
      case 4: //ORB
-     {int maxCorners=150;
+     {int maxCorners=200;
       OrbFeatureDetector detector(maxCorners);
       detector.detect(img1, keypoints1);
       detector.detect(img2, keypoints2);     
@@ -220,7 +236,7 @@ fy=395.45221;
     { 
      case 1:
      {
-     double distance=50.; //quite adjustable/variable
+     double distance=40.; //quite adjustable/variable
      double confidence=0.99; //doesnt affect much when changed
      ransacTest(matches,keypoints1,keypoints2,good_matches,distance,confidence); 
      break;
@@ -245,30 +261,33 @@ fy=395.45221;
       }
      break;	
      }	
+     case 3: //dist<2*min_dist
+     {
+        double max_dist = 0; double min_dist = 100;
+
+ 	 //-- Quick calculation of max and min distances between keypoints
+ 	 for( int i = 0; i < descriptors1.rows; i++ )
+	  { double dist = matches[i].distance;
+	    if( dist < min_dist ) min_dist = dist;
+	    if( dist > max_dist ) max_dist = dist;
+  	  }
+
+	  printf("-- Max dist : %f \n", max_dist );
+	  printf("-- Min dist : %f \n", min_dist );
+
+	  //-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
+	  //-- PS.- radiusMatch can also be used here.
+	
+	  for( int i = 0; i < descriptors1.rows; i++ )
+	  { if( matches[i].distance < 2*min_dist )
+	    { good_matches.push_back( matches[i]); }
+	  }		
+     }
     }
 
  matches=good_matches; // update matches by good_matches
  N=matches.size();  // no of matched feature points   
-/*
-// estimateRigidTransform method to find rotation
-std::vector<Point2f> src;
-std::vector<Point2f> dst;
-Point2f point_1,point_2;
-Point2f centre(uo,vo);
 
-for(size_t i = 0; i < 15; i++)
-{
-    point_1 = keypoints1[matches[i].queryIdx].pt;
-    point_2 = keypoints2[matches[i].trainIdx].pt;  
-    point_1 = point_1-centre;
-    point_2 = point_2-centre;
-   src.push_back(point_1);
-   dst.push_back(point_2);    
-}
-Mat rot=estimateRigidTransform(src,dst,false);
-cout<<rot<<"\n";
-*/
- 
 // Old and new consecutive frames pixel coordinate
 u_old=new float [N]; 
 v_old=new float [N];
@@ -309,10 +328,8 @@ for(size_t i = 0; i < N; i++)
 // f(x)=sum{i=1 to N}[(Dx-Z(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))^2] + sum{i=1 to N}[(Dy-Z(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))^2]
 // grad(f(x))={df/dDx,df/dDy,df/dphi,df/dZ}
 
-//Fix Dx,Dy,Z as only ROTATION case
-Dx=0;Dy=0;Z=1;
-//initial guess (for phi alone)
-phi=0;
+//initial guess
+Dx=0;Dy=0;phi=0;Z=1; 
 
 // Initial error
 e=0;
@@ -320,47 +337,48 @@ for(size_t i = 0; i < N; i++){
  e =e+(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))*(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))+(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))*(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]));
 }
 
-// Iterate over phi using gradient functions until error<0.01
+// Iterate x_vect={Dx,Dy,phi,Z} using gradient functions until error<0.01
 count=0;
-float e_old=0;
 //gm=0.005;
-while(e>=0.01&&e_old!=e){
+while(e>=0.01){
 	count++;
-	e_old=e;
-//Old phi
- phi_o=phi;
+//Old x_vect={Dx,Dy,phi,Z}
+ Dx_o=Dx;Dy_o=Dy;phi_o=phi;Z_o=Z;
 switch (solver)
 {
- case 1: gm=0.01; // Gradient Descent
+ case 1: gm=0.005; // Gradient Descent
  break;
  case 2: gm=1/e; // Newton-Raphson
  break;
 }
  
-//New phi
- phi=phi_o-gm*df_dphi(Dx,Dy,phi_o,Z,A,B,N);
- 
+//New x_vect={Dx,Dy,phi,Z}
+ Dx=Dx_o-gm*df_dDx(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+ Dy=Dy_o-gm*df_dDy(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+ phi=phi_o-gm*df_dphi(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+ Z=Z_o-gm*df_dZ(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+
 // Find error
  e=0;
  for(size_t i = 0; i < N; i++){
  e =e+(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))*(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))+(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))*(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]));
  }
-cout<<e<<"\t";
+//cout<<e<<"\t";
 }
 
 time=clock()-time;
-cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
-cout<<e<<"\n"<<count<<"\n";
-cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
+cout<<"N="<<N<<"\t"<<"Dx="<<Dx<<"\t"<<"Dy="<<Dy<<"\t"<<"phi="<<phi<<"\t"<<"Z="<<Z<<"\t";
+cout<<"e="<<e<<"\t"<<"iteratn="<<count<<"\t";
+cout<<"time="<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
-
-
-    // drawing the rmatches
-    namedWindow("matches", 1);
-    Mat img_matches;
-    drawMatches(img1, keypoints1, img2, keypoints2, matches, img_matches);
-    imshow("matches", img_matches);
-    waitKey(0);
-
+        
+        }
+        
+    	frame_old=frame.clone();        
+        imshow("frames_old", frame_old);    	
+        if(waitKey(10) >= 0) break;// waitKey will bring unrqrd delay        
+    }
+    cap.release();
+    // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;
 }

@@ -172,7 +172,7 @@ while(e>=0.01){
  Z_o=Z;
  
  int icount=0;
- while(e>=0.01){ icount++;
+ while(e>=0.01&&icount<100){ icount++;
   Dx_o=Dx;Dy_o=Dy;phi_o=phi;
   //Iterate over Dx,Dy,phi keeping Z const
   Dx=Dx_o-gm*df_dDx(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
@@ -194,9 +194,9 @@ while(e>=0.01){
 }
 
 time=clock()-time;
-//cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
-//cout<<e<<"\n"<<count<<"\n";
-//cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
+cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
+cout<<e<<"\n"<<count<<"\n";
+cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
 /*
     // drawing the rmatches

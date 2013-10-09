@@ -181,7 +181,7 @@ while(e>=0.01){
 }
 
 time=clock()-time;
-//cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
+cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
 cout<<e<<"\n"<<count<<"\n";
 cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
