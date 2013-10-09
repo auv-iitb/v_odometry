@@ -110,10 +110,10 @@ cv::Mat VisualOdometry::getRotation(cv::Mat img){
         solver=atoi(argv[7]);
     }*/
     // Intrinsic Calibration parameters for img size 320x240
-    uo=321.2;
-    vo=241.6;
-    fx=1000.2;
-    fy=1000.3;
+    uo=157.73985;
+    vo=134.19819;
+    fx=391.54809;
+    fy=395.45221;
 
     //Mat img1; //imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
     //Mat img2; //imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);

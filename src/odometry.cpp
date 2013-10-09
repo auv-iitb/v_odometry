@@ -1,12 +1,4 @@
-#include <iostream>
-#include <cmath>
-#include <time.h>
-#include <stdio.h>
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/core/core.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
+#include "visual_odometry.h"
 
 using namespace std;
 using namespace cv;
@@ -88,21 +80,21 @@ void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyP
 }
 
 
-int main(int argc, char** argv)
-{
+//int main(int argc, char** argv)
+//{
+cv::Mat VisualOdometry::getRotation(cv::Mat img){
     clock_t time;
     time=clock();
     int N,count,feature,extract,match,outlier,solver;
     float *u_old,*v_old,*u_new,*v_new;
     float **A,**B;
     float uo,vo,fx,fy,Z,Dx,Dy,phi,e,Dx_o,Dy_o,phi_o,Z_o,gm;
-
+    /*
     if(argc < 3)
     { help();
         return -1;
     }
-
-<<<<<<< HEAD
+    */
     //Default option values
     feature=1;
     extract=1;
@@ -110,25 +102,28 @@ int main(int argc, char** argv)
     outlier=1;
     solver=1;
     //Argument input for option selection
-    if (argc>=8){
+    /*if (argc>=8){
         feature=atoi(argv[3]);
         extract=atoi(argv[4]);
         match=atoi(argv[5]);
         outlier=atoi(argv[6]); 
         solver=atoi(argv[7]);
-    }
+    }*/
     // Intrinsic Calibration parameters for img size 320x240
     uo=157.73985;
     vo=134.19819;
     fx=391.54809;
     fy=395.45221;
 
-    Mat img1 = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
-    Mat img2 = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
+    //Mat img1 = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+    //Mat img2 = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
+    img2 = img1;
+    img1 = img;
     if(img1.empty() || img2.empty())
     {
         printf("Can't read one of the images\n");
-        return -1;
+        cv::Mat null;
+        return null;
     }
 
     // detecting keypoints
@@ -355,7 +350,7 @@ int main(int argc, char** argv)
     cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
     cout<<e<<"\n"<<count<<"\n";
     cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
-
+    cv::Mat res = (Mat_<double>(2,2) << Dx, phi, Dy, Z);
 
     // drawing the rmatches
     namedWindow("matches", 1);
@@ -364,5 +359,5 @@ int main(int argc, char** argv)
     imshow("matches", img_matches);
     waitKey(0);
 
-    return 0;
+    return res;
 }
