@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	frame_old=frame.clone();    	
     }
     
-    // ROS Plot x_net, y_net, heading_net wrt time
+    // Plot x_net, y_net, heading_net wrt time
     
     return 0;
 }
