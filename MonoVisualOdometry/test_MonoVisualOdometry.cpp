@@ -44,6 +44,7 @@ int main(int argc, char** argv)
    	  odom.run(); 	// run the main odometry calculations
    	  MonoVisualOdometry::pose position; //output struct
 	  odom.output(position);  // get output parameters
+	  
 	  cout<<position.N<<"\n"; // no of good_matches
 	  cout<<position.x_net<<"\n"; // net x-translation
 	  cout<<position.y_net<<"\n"; // net y-translation
@@ -58,7 +59,7 @@ int main(int argc, char** argv)
 	frame_old=frame.clone();    	
     }
     
-    // Plot x_net, y_net, heading_net wrt time
+    // ROS Plot x_net, y_net, heading_net wrt time
     
     return 0;
 }
