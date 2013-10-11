@@ -44,11 +44,16 @@ int main(int argc, char** argv)
 	  odom.output(position);
 	  cout<<position.N<<"\n";
 	  cout<<position.x_net<<"\n";
+	  cout<<position.y_net<<"\n";
+	  cout<<position.heading_net<<"\n";
+	  cout<<position.Z_avg1<<"\n";
+	  cout<<position.Z_avg2<<"\n";
+	  cout<<position.iteration<<"\n";
+  	  cout<<position.run_time<<"\n";	  
     	}
 	
 	//copy the frame to frame_old
 	frame_old=frame.clone();    	
     }
-    cout<<"Success\n";
     return 0;
 }

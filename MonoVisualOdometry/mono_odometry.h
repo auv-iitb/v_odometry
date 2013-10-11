@@ -45,7 +45,7 @@ public:
  
   // general parameters
   struct parameters {
-    MonoVisualOdometry::options   option;           // bucketing parameters
+    MonoVisualOdometry::options   option;           // options for feature usage
     //MonoVisualOdometry::calibration calib;          // camera calibration parameters
   };
   
@@ -69,13 +69,13 @@ public:
   int nframes; // overall count of frames taken
   
   // constructor, takes as input a parameter structure:
-  //MonoVisualOdometry (int feature,int extract,int match,int outlier,int solver);
   MonoVisualOdometry (parameters param);
   
   // deconstructor
   ~MonoVisualOdometry ();
   
   //function to get image from ROS
+  
   
   // find keypoints
   void findKeypoints();  
@@ -102,7 +102,6 @@ public:
   void run(); 
   
   // get output 
- // void output(int N, float x_net, float y_net, float heading_net, float Z_avg1, float Z_avg2, int iteration, float run_time);   
   void output(pose& );
   
 protected:
@@ -117,9 +116,9 @@ protected:
     void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyPoint>&keypoints1,const std::vector<cv::KeyPoint>& keypoints2,std::vector<cv::DMatch>& goodMatches,double distance,double confidence);
 
 
-   // int nframes; 	// overall count of frames taken
+//(made public) int nframes; 	// overall count of frames taken
     float net_Dx,net_Dy,net_phi,net_Z1,net_Z2,Zsum,Rcos,Rsin; 	// net pose params at any instant (wrt initial pose)
-   // cv::Mat img1,img2; 	//old(1) and new(2) frames obtained from camera
+//(made public) cv::Mat img1,img2; 	//old(1) and new(2) frames obtained from camera
     clock_t time; 	// variable to track time taken to run code
     float run_time;	//time for single run
     int N;	// no of good_matches obtained

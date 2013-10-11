@@ -4,11 +4,13 @@ using namespace std;
 using namespace cv;
 
 MonoVisualOdometry::MonoVisualOdometry (parameters param) {
-    net_Dx=0;net_Dy=0;net_phi=0;net_Z1=0;net_Z2=0;Zsum=0;
+      net_Dx=0;net_Dy=0;net_phi=0;net_Z1=0;net_Z2=0;Zsum=0; //pose initialisation
+      // calib parameters
       uo=157.73985;
       vo=134.19819;
       fx=391.54809;
       fy=395.45221;
+      // getting feature options from user
       feature=param.option.feature;
       extract=param.option.extract;
       match=param.option.match;
@@ -24,27 +26,27 @@ void MonoVisualOdometry::findKeypoints() {
     switch(feature)
     {
      case 1: //FAST
-     {int threshold=110;
+     {int threshold=130;
      FastFeatureDetector detector(threshold);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
      case 2: //SURF
-     {SurfFeatureDetector detector(3000);
+     {SurfFeatureDetector detector(2000);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
      case 3: //GFTT
-     {int maxCorners=200;
+     {int maxCorners=150;
       GoodFeaturesToTrackDetector detector(maxCorners);
       detector.detect(img1, keypoints1);
       detector.detect(img2, keypoints2);
       break;
      }
      case 4: //ORB
-     {int maxCorners=200;
+     {int maxCorners=150;
       OrbFeatureDetector detector(maxCorners);
       detector.detect(img1, keypoints1);
       detector.detect(img2, keypoints2);     
@@ -109,7 +111,7 @@ void MonoVisualOdometry::findGoodMatches() {
     { 
      case 1:
      {
-     double distance=40.; //quite adjustable/variable
+     double distance=50.; //quite adjustable/variable
      double confidence=0.99; //doesnt affect much when changed
      ransacTest(matches,keypoints1,keypoints2,good_matches,distance,confidence); 
      break;
