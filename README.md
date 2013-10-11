@@ -19,6 +19,6 @@ This is built from odometry.cpp as the base and simply iterating over only rotat
 
 7) vid_odometry.cpp - monocular visual odometry from live video capture
 
-8) visual_odometry_method.txt - method used for odometry is explained
+8) visual_odometry_method.txt - method used for odometry is explained (not complete)
 
 9) MonoVisualOdometry - Monocular Vision Odometry class. Calculates the net pose at any instant.

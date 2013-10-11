@@ -16,3 +16,9 @@ This is built from odometry.cpp as the base and simply iterating over only rotat
 5) 1.png & 2.png are test files actually taken from stereo-camera which can be used to test the displacement outputs. {x-displ should be some finite value and y-displ should be approx 0 and phi~0}
 
 6) FAST_matrix.cpp - uses c++ matrix library for calculating matrix inverse.
+
+7) vid_odometry.cpp - monocular visual odometry from live video capture
+
+8) visual_odometry_method.txt - method used for odometry is explained
+
+9) MonoVisualOdometry - Monocular Vision Odometry class. Calculates the net pose at any instant.
