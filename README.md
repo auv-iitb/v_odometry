@@ -15,3 +15,4 @@ This is built from odometry.cpp as the base and simply iterating over only rotat
 
 5) 1.png & 2.png are test files actually taken from stereo-camera which can be used to test the displacement outputs. {x-displ should be some finite value and y-displ should be approx 0 and phi~0}
 
+6) FAST_matrix.cpp - uses c++ matrix library for calculating matrix inverse.
