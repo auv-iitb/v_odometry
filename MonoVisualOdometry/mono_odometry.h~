@@ -103,7 +103,7 @@ public:
   
   // get output 
  // void output(int N, float x_net, float y_net, float heading_net, float Z_avg1, float Z_avg2, int iteration, float run_time);   
-  void output(pose position);
+  void output(pose );
   
 protected:
 

@@ -296,7 +296,7 @@ void MonoVisualOdometry::run() {
 }
 
 //void MonoVisualOdometry::output(int N,float x_net,float y_net,float heading_net,float Z_avg1,float Z_avg2,int iteration,float run_time) {
-void MonoVisualOdometry::output(pose position) {
+void MonoVisualOdometry::output(pose& position) {
     position.N=N;
     position.iteration=count;
     position.x_net=net_Dx;

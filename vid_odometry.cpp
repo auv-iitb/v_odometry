@@ -1,6 +1,6 @@
 /*
  * This program is used to test the odometry.cpp code using live video feed from a pre-calibrated camera. Outputs are camera translation in x and y, rotation angle  and depth of points in the image (assuming it to be same for all points)
- * 
+ * It also gives net pose {x-transl,y-transl,net heading} as the output.
  * 
  * Usage ex.: ./a.out 4 2 1 1 2
  */
@@ -10,8 +10,8 @@
 #include <time.h>
 #include <stdio.h>
 #include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/core/core.hpp"
-#include "opencv2/features2d/features2d.hpp"
+//#include "opencv2/core/core.hpp"
+//#include "opencv2/features2d/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/video/tracking.hpp"
@@ -302,8 +302,8 @@ v_old=new float [N];
 u_new=new float [N];
 v_new=new float [N];
 
-A=new float* [N]; //old [X/Z Y/Z 1]
-B=new float* [N]; //new [Xn/Z Yn/Z 1]
+A=new float* [N]; //old normalised coordinates [X/Z Y/Z 1]
+B=new float* [N]; //new normalised coordinates [Xn/Z Yn/Z 1]
 
 for(int i=0; i<N; i++) 
 {
@@ -311,7 +311,7 @@ for(int i=0; i<N; i++)
     B[i] = new float [3];
 }
 
-// Obtaining pixel coordinates of feature points
+// Obtaining pixel coordinates and normalised 3D coordinates of feature points
 for(size_t i = 0; i < N; i++)
 {
     Point2f point1 = keypoints1[matches[i].queryIdx].pt;
@@ -331,7 +331,7 @@ for(size_t i = 0; i < N; i++)
 
 }
 
-// Finding least square error using Gradient Descent Method 
+// Finding least square error using Gradient-Descent or Newton-Raphson Method 
 // x_vect={Dx,Dy,phi,Z} and x(n+1)=x(n)-grad(f(x(n)))
 // f(x)=sum{i=1 to N}[(Dx-Z(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))^2] + sum{i=1 to N}[(Dy-Z(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))^2]
 // grad(f(x))={df/dDx,df/dDy,df/dphi,df/dZ}
@@ -379,15 +379,16 @@ cout<<"N="<<N<<"\t"<<"Dx="<<Dx<<"\t"<<"Dy="<<Dy<<"\t"<<"phi="<<phi<<"\t"<<"Z="<<
 cout<<"e="<<e<<"\t"<<"iteratn="<<count<<"\t";
 cout<<"time="<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
+// net pose calculation (wrt starting pose) 
 	Rcos=Dx*cos(phi)+Dy*sin(phi);
 	Rsin=Dx*sin(phi)-Dy*cos(phi);	
-	net_Dx=net_Dx+Rcos*cos(net_phi)-Rsin*sin(net_phi);
-	net_Dy=net_Dy+Rcos*sin(net_phi)+Rsin*cos(net_phi);	
-        net_phi=net_phi+phi;
-        Zsum=Zsum+Z;
-        net_Z1=Zsum/(ov_count-1);
+	net_Dx=net_Dx+Rcos*cos(net_phi)-Rsin*sin(net_phi); //net camera translation in x-direction wrt to starting pose
+	net_Dy=net_Dy+Rcos*sin(net_phi)+Rsin*cos(net_phi); //net camera translation in y-direction wrt to starting pose	
+        net_phi=net_phi+phi; 				   //net heading angle (anti-clk +ve)
+        Zsum=Zsum+Z;					   
+        net_Z1=Zsum/(ov_count-1);			   //average estimated_1 value of depth of ground from camera
 	  if(ov_count==2) net_Z2=Z;
-          else net_Z2=(net_Z2+Z)/2;
+          else net_Z2=(net_Z2+Z)/2;			   //average estimated_2 value of depth of ground from camera
 	cout<<"Dx_net="<<net_Dx<<"\t"<<"Dy_net="<<net_Dy<<"\t"<<"phi_net="<<net_phi<<"\t"<<"Z_net1="<<net_Z1<<"\t";
 	cout<<"Z_net2="<<net_Z2<<"\n"<<"reso"<<frame.size()<<"\n";
         }

@@ -1,0 +1,60 @@
+Assumptions: Z is almost constant for all points in any image and also the same for two consecutive frames.
+
+In homogenous coordinate system the relation can be written as:
+(using basic rotation and translation transformations)
+
+[Xn/Z Yn/Z 1] = [X/Z Y/Z 1]*[ cosT -sinT 0
+                              sinT  cosT 0
+                             -Dx/Z -Dy/Z   1]
+
+T: rotation angle (anticlk)
+Dx and Dy : global translation of camera
+Xn,Yn,Z : new frame 3D coordinate of a point
+X,Y,Z : old frame 3D coordinate of the same point 
+uo,vo, f/dx, f/dy : intrinsic camera parameters obtained from calibration
+
+Using feature detection and matching we find out the pixel locations of a same point in two adjacent frames, say (u,v) and (Un,Vn)
+
+We know the relation between 3D coordinate of a point and its pixel coordinates:
+X/Z=(u-u0)*(dx/f) and Y/Z=(v-v0)*(dy/f)
+Xn/Z=(Un-u0)*(dx/f) and Yn/Z=(Vn-v0)*(dy/f)
+
+Thus, for each matched feature point, we know X/Z, Y/Z, Xn/Z, Yn/Z
+and thus applying the above matrix relation for N feature points and finding out the least square error solution for [Tr] (transformation matrix) using matrix algebra,
+[Tr] = [ cosT -sinT 0
+         sinT  cosT 0
+        -Dx/Z -Dy/Z   1]
+
+A (Nx3) = [X_1/Z  Y_1/Z  1
+           X_2/Z  Y_2/Z  1
+           ...              
+           X_N/Z  Y_N/Z  1]
+
+B (Nx3) = [Xn_1/Z  Yn_1/Z  1
+           Xn_2/Z  Yn_2/Z   1
+           ...              
+           Xn_N/Z  Yn_N/Z  1]
+A' (3xN) : transpose of A
+
+[Tr] = inv(A'A)*(A' B)
+
+Thus, the rotation angle T is now known. We also know Dx/Z=[-Tr(3,1)] and Dy/Z=[-Tr(3,2)].
+
+The actual equation (rearranged) is (written in matrix form earlier):
+Dx=Z*{ cosT*(u-u0)*(dx/f) + sinT*(v-v0)*(dy/f) - (Un-u0)*(dx/f) }
+
+Everything in RHS except Z is a known quantity. Let it be Ci (for ith feature point)
+
+Dx=Z*Ci and similarly Dy=Z*Ki
+
+Now our problem is reduced to the same thing we discussed to initially guess Z find Dx using [Tr(3,1)] matrix and use it to find Z_opt which minimizes the error; 
+
+e= Sum {for i=1 to N pts} [(Dx-Z*Ci)^2 + (Dy-Z*Ki)^2]
+Z_opt = [ Dx*Sum(Ci) + Dy*Sum(Ki) ] / [ Sum(Ci^2) + Sum(Ki^2) ]  
+Now, calculate new Dx=Z_opt*[-Tr(3,1)]
+Now check e<0.1 or iteratn>100; if yes take Z=Z_opt 
+if not, find new Z_opt as Dx has changed.........loop
+
+Thus, we can calculate rotation angle T, global camera translations Dx, Dy and depth of feature points Z.
+
+This is what I think can be done, suggest any changes /improvement in any of the above step.

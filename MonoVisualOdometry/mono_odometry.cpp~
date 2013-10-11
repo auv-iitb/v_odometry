@@ -305,7 +305,7 @@ void MonoVisualOdometry::output(pose position) {
     position.Z_avg1=net_Z1;
     position.Z_avg2=net_Z2;
     position.run_time=run_time; 
-//}
+}
 
 float MonoVisualOdometry::df_dDx(float Dx,float Dy, float phi, float Z, float **A, float **B, int N) {
   float sum=0;

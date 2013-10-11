@@ -41,9 +41,9 @@ int main(int argc, char** argv)
   	  odom.img2=frame;
    	  odom.run();
    	  MonoVisualOdometry::pose position;
-	  odom.output(position);
+	  odom.output(&position);
 	  cout<<position.N<<"\n";
-	  cout<<position.iteration<<"\n";
+	  cout<<position.x_net<<"\n";
     	}
 	
 	//copy the frame to frame_old
