@@ -173,6 +173,7 @@ void MonoVisualOdometry::calcOpticalFlow(){
         float y= keypoints1[i].pt.y;
         keypoints1_2f.push_back(cv::Point2f(x,y));
        }
+       
     // LK Sparse Optical Flow   
     vector<uchar> status; 
     vector<float> err;
@@ -182,7 +183,17 @@ void MonoVisualOdometry::calcOpticalFlow(){
     int flags=0;
     double minEigThreshold=1e-4;
     cv::calcOpticalFlowPyrLK(img1, img2, keypoints1_2f, keypoints2_2f, status, err, winSize, maxLevel, criteria, flags, minEigThreshold);
-    N=keypoints2_2f.size();  // no of matched feature points
+
+    // convert Point2f to KeyPoints
+    for (int i=0;i<keypoints2_2f.size(); i++)
+       {
+        float x= keypoints2_2f[i].x;
+        float y= keypoints2_2f[i].y;
+        KeyPoint kp(x,y,1.0,-1.0,0.0,0,-1);
+        keypoints2.push_back(kp);
+       }
+      
+    N=keypoints2.size();  // no of matched feature points
 }
 
 void MonoVisualOdometry::calcNormCoordinates() {
@@ -205,28 +216,53 @@ void MonoVisualOdometry::calcNormCoordinates() {
      for(size_t i = 0; i < N; i++)
      {
      	 Point2f point1,point2;
-         if(!opticalFlow){
-         point1 = keypoints1[matches[i].queryIdx].pt;
-         point2 = keypoints2[matches[i].trainIdx].pt;
+         if(opticalFlow){
+         point1 = keypoints1[i].pt;
+         point2 = keypoints2[i].pt;         
          }
          else {
-         point1 = keypoints1_2f[i];
-         point2 = keypoints2_2f[i];         
+         point1 = keypoints1[matches[i].queryIdx].pt;
+         point2 = keypoints2[matches[i].trainIdx].pt;         
          }
          u_old[i]=point1.x;
          v_old[i]=point1.y;
          u_new[i]=point2.x;
          v_new[i]=point2.y;
 
-         A[i][0] = -(u_old[i]-uo)/fx; 
+         A[i][0] = (u_old[i]-uo)/fx; 
          A[i][1] = (v_old[i]-vo)/fy; 
          A[i][2] = 1;
 
-         B[i][0] = -(u_new[i]-uo)/fx;
+         B[i][0] = (u_new[i]-uo)/fx;
          B[i][1] = (v_new[i]-vo)/fy;
          B[i][2] = 1;
 
      }
+}
+
+// estimate Rotation using estimateRigidTransform
+void MonoVisualOdometry::estimateTransformMatrix() {
+     std::vector<Point2f> src;
+     std::vector<Point2f> dst;
+     Point2f point_1,point_2;
+     Point2f centre(uo,vo);
+
+     for(size_t i = 0; i < N; i++)
+     {
+         if(opticalFlow){
+         point_1 = keypoints1[i].pt;
+         point_2 = keypoints2[i].pt;         
+         }
+         else {
+         point_1 = keypoints1[matches[i].queryIdx].pt;
+         point_2 = keypoints2[matches[i].trainIdx].pt;         
+         } 
+         point_1 = point_1-centre;
+         point_2 = point_2-centre;
+         src.push_back(point_1);
+         dst.push_back(point_2);    
+     }
+     rot=cv::estimateRigidTransform(src,dst,false);
 }
 
 void MonoVisualOdometry::calcPoseVector() {
@@ -274,13 +310,13 @@ void MonoVisualOdometry::calcPoseVector() {
     
 }
 
-void MonoVisualOdometry::update_Motion(){
+void MonoVisualOdometry::updateMotion(){
     // net pose calculation (wrt starting pose) 
     Rcos=Dx*cos(phi)+Dy*sin(phi);
     Rsin=Dx*sin(phi)-Dy*cos(phi);
-   // rel_Dx=Rcos*cos(net_phi)-Rsin*sin(net_phi);		//relative Dx wrt to previous frame
-  //  rel_Dy=Rcos*sin(net_phi)+Rsin*cos(net_phi);		//relative Dy wrt to previous frame
-  //  rel_phi=phi;					//relative phi wrt to previous frame
+    rel_Dx=Rcos*cos(net_phi)-Rsin*sin(net_phi);		//relative Dx wrt to previous frame
+    rel_Dy=Rcos*sin(net_phi)+Rsin*cos(net_phi);		//relative Dy wrt to previous frame
+    rel_phi=phi;					//relative phi wrt to previous frame
     net_Dx=net_Dx+Rcos*cos(net_phi)-Rsin*sin(net_phi); //net(absolute) camera translation in x-direction wrt to starting pose
     net_Dy=net_Dy+Rcos*sin(net_phi)+Rsin*cos(net_phi); //net(absolute) camera translation in y-direction wrt to starting pose	
     net_phi=net_phi+phi; 			       //net(absolute) heading angle (anti-clk +ve)
@@ -300,7 +336,11 @@ void MonoVisualOdometry::run() {
     cvtColor(img1,img1,CV_BGR2GRAY);
     cvtColor(img2,img2,CV_BGR2GRAY);  
     
-  if(!opticalFlow){
+  if(opticalFlow){
+    //calculate matched feature points optical flow
+    calcOpticalFlow();
+  }
+  else {
     // find keypoints
     findKeypoints();  
   
@@ -313,10 +353,6 @@ void MonoVisualOdometry::run() {
     // find good_matches
     findGoodMatches();
   }
-  else {
-    //calculate matched feature points optical flow
-    calcOpticalFlow();
-  }
     // calc normalised 3D coordinates
     calcNormCoordinates();
   
@@ -324,7 +360,10 @@ void MonoVisualOdometry::run() {
     calcPoseVector();
   
     // update motion history
-    update_Motion();
+    updateMotion();
+    
+    // rotation using estimateRigidTransform
+    estimateTransformMatrix();
     
     time=clock()-time;
     run_time=((float)time)/CLOCKS_PER_SEC;   //time for single run
@@ -347,9 +386,10 @@ void MonoVisualOdometry::output(pose& position) {
     position.Z_avg1=net_Z1;
     position.Z_avg2=net_Z2;
     position.run_time=run_time; 
-//    position.x_rel=rel_Dx;
-//    position.y_rel=rel_Dy;
-//    position.heading_rel=rel_phi;
+    position.x_rel=rel_Dx;
+    position.y_rel=rel_Dy;
+    position.heading_rel=rel_phi;
+    position.rot=rot;
 }
 
 float MonoVisualOdometry::df_dDx(float Dx,float Dy, float phi, float Z, float **A, float **B, int N) {

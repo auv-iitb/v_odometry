@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     MonoVisualOdometry odom(param);               
     odom.nframes=1; // keeps track of overall frames count
 //    odom.nframes=0; // shud be intitialised with =0; for testing =1;
-    odom.opticalFlow=true;
+    odom.opticalFlow=true; 	//necessary for optical flow
     
 //    while(!flag){	//actual
     for(int i=0 ;i<1 ;i++ ){	// for(;;) testing
@@ -58,6 +58,7 @@ int main(int argc, char** argv)
     	  cout<<position.x_rel<<"\n";  // relative x-translation
     	  cout<<position.y_rel<<"\n";  // relative y-translation
           cout<<position.heading_rel<<"\n";  	  // relative heading change
+          cout<<position.rot<<"\n";		//transform estimated using estimateRigidTransform
     	}
 	
 	//copy the frame to frame_old

@@ -249,14 +249,14 @@ fy=395.45221;
 
  matches=good_matches; // update matches by good_matches
  N=matches.size();  // no of matched feature points   
-/*
+
 // estimateRigidTransform method to find rotation
 std::vector<Point2f> src;
 std::vector<Point2f> dst;
 Point2f point_1,point_2;
 Point2f centre(uo,vo);
 
-for(size_t i = 0; i < 15; i++)
+for(size_t i = 0; i < N; i++)
 {
     point_1 = keypoints1[matches[i].queryIdx].pt;
     point_2 = keypoints2[matches[i].trainIdx].pt;  
@@ -267,7 +267,7 @@ for(size_t i = 0; i < 15; i++)
 }
 Mat rot=estimateRigidTransform(src,dst,false);
 cout<<rot<<"\n";
-*/
+
  
 // Old and new consecutive frames pixel coordinate
 u_old=new float [N]; 
@@ -294,11 +294,11 @@ for(size_t i = 0; i < N; i++)
     u_new[i]=point2.x;
     v_new[i]=point2.y;
 
-    A[i][0] = -(u_old[i]-uo)/fx; 
+    A[i][0] = (u_old[i]-uo)/fx; 
     A[i][1] = (v_old[i]-vo)/fy; 
     A[i][2] = 1;
 
-    B[i][0] = -(u_new[i]-uo)/fx;
+    B[i][0] = (u_new[i]-uo)/fx;
     B[i][1] = (v_new[i]-vo)/fy;
     B[i][2] = 1;
 
@@ -312,7 +312,7 @@ for(size_t i = 0; i < N; i++)
 //Fix Dx,Dy,Z as only ROTATION case
 Dx=0;Dy=0;Z=1;
 //initial guess (for phi alone)
-phi=0;
+phi=0.2;
 
 // Initial error
 e=0;

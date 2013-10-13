@@ -134,11 +134,11 @@ for(size_t i = 0; i < N; i++)
     u_new[i]=point2.x;
     v_new[i]=point2.y;
 
-    A[i][0] = -(u_old[i]-uo)/fx; 
+    A[i][0] = (u_old[i]-uo)/fx; 
     A[i][1] = (v_old[i]-vo)/fy; 
     A[i][2] = 1;
 
-    B[i][0] = -(u_new[i]-uo)/fx;
+    B[i][0] = (u_new[i]-uo)/fx;
     B[i][1] = (v_new[i]-vo)/fy;
     B[i][2] = 1;
 
