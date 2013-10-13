@@ -55,6 +55,9 @@ int main(int argc, char** argv)
 	  cout<<position.Z_avg2<<"\n"; // avg Z estimation 2
 	  cout<<position.iteration<<"\n"; // no of solver iterations
   	  cout<<position.run_time<<"\n"; // .run() time
+    	  cout<<position.x_rel<<"\n";  // relative x-translation
+    	  cout<<position.y_rel<<"\n";  // relative y-translation
+          cout<<position.heading_rel<<"\n";  	  // relative heading change
     	}
 	
 	//copy the frame to frame_old

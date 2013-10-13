@@ -277,10 +277,13 @@ void MonoVisualOdometry::calcPoseVector() {
 void MonoVisualOdometry::update_Motion(){
     // net pose calculation (wrt starting pose) 
     Rcos=Dx*cos(phi)+Dy*sin(phi);
-    Rsin=Dx*sin(phi)-Dy*cos(phi);	
-    net_Dx=net_Dx+Rcos*cos(net_phi)-Rsin*sin(net_phi); //net camera translation in x-direction wrt to starting pose
-    net_Dy=net_Dy+Rcos*sin(net_phi)+Rsin*cos(net_phi); //net camera translation in y-direction wrt to starting pose	
-    net_phi=net_phi+phi; 			       //net heading angle (anti-clk +ve)
+    Rsin=Dx*sin(phi)-Dy*cos(phi);
+   // rel_Dx=Rcos*cos(net_phi)-Rsin*sin(net_phi);		//relative Dx wrt to previous frame
+  //  rel_Dy=Rcos*sin(net_phi)+Rsin*cos(net_phi);		//relative Dy wrt to previous frame
+  //  rel_phi=phi;					//relative phi wrt to previous frame
+    net_Dx=net_Dx+Rcos*cos(net_phi)-Rsin*sin(net_phi); //net(absolute) camera translation in x-direction wrt to starting pose
+    net_Dy=net_Dy+Rcos*sin(net_phi)+Rsin*cos(net_phi); //net(absolute) camera translation in y-direction wrt to starting pose	
+    net_phi=net_phi+phi; 			       //net(absolute) heading angle (anti-clk +ve)
     Zsum=Zsum+Z;					   
     net_Z1=Zsum/(nframes-1);			       //average estimated_1 value of depth of ground from camera
     if(nframes==2) net_Z2=Z;
@@ -344,6 +347,9 @@ void MonoVisualOdometry::output(pose& position) {
     position.Z_avg1=net_Z1;
     position.Z_avg2=net_Z2;
     position.run_time=run_time; 
+//    position.x_rel=rel_Dx;
+//    position.y_rel=rel_Dy;
+//    position.heading_rel=rel_phi;
 }
 
 float MonoVisualOdometry::df_dDx(float Dx,float Dy, float phi, float Z, float **A, float **B, int N) {
