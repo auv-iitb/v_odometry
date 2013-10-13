@@ -7,6 +7,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/video/tracking.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
 
 
 class MonoVisualOdometry {
@@ -67,6 +69,7 @@ public:
   
   cv::Mat img1,img2; //old(1) and new(2) frames obtained from camera
   int nframes; // overall count of frames taken
+  bool opticalFlow; // set(=1) for optical flow method
   
   // constructor, takes as input a parameter structure:
   MonoVisualOdometry (parameters param);
@@ -97,6 +100,9 @@ public:
   
   // update motion history
   void update_Motion();
+  
+  // calculate feature matches using optical flow
+  void calcOpticalFlow();
   
   // run the entire process
   void run(); 
@@ -130,6 +136,7 @@ protected:
     float e; 	// error while solving minimization problem
     float gm; 	// param for controlling gradient descent/newton-raphson method
     cv::vector<cv::KeyPoint> keypoints1, keypoints2; 	//keypoints detected in two consecutive images 
+    cv::vector<cv::Point2f> keypoints1_2f,keypoints2_2f;	//keypoints for calcOpticalFlow
     cv::Mat descriptors1, descriptors2; 	//descriptors calculated for the corresponding keypoints
     cv::vector<cv::DMatch> matches;      //matches among the keypoints
     cv::vector<cv::DMatch > good_matches;    //good_matches among the matches
@@ -137,6 +144,7 @@ protected:
     float fy;  // f/dy (in pixels)    
     float uo; // principal point (u-coordinate)
     float vo; // principal point (v-coordinate)
+//    vector<uchar> status; // flag to check whether optical flow matching is found
 
 private:
   //  parameters  param;     // common parameters

@@ -1,6 +1,6 @@
 LDIR=-L/usr/local/lib
 
-LIBS=-lopencv_calib3d -lopencv_core -lopencv_features2d -lopencv_flann -lopencv_highgui -lopencv_nonfree
+LIBS=-lopencv_calib3d -lopencv_core -lopencv_features2d -lopencv_flann -lopencv_highgui -lopencv_nonfree -lopencv_video
 
 proj: test_MonoVisualOdometry.o mono_odometry.o
 	g++ -o proj test_MonoVisualOdometry.o mono_odometry.o $(LIBS) $(LDIR)
