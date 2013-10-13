@@ -4,11 +4,13 @@ using namespace std;
 using namespace cv;
 
 MonoVisualOdometry::MonoVisualOdometry (parameters param) {
-    net_Dx=0;net_Dy=0;net_phi=0;net_Z1=0;net_Z2=0;Zsum=0;
+      net_Dx=0;net_Dy=0;net_phi=0;net_Z1=0;net_Z2=0;Zsum=0; //pose initialisation
+      // calib parameters
       uo=157.73985;
       vo=134.19819;
       fx=391.54809;
       fy=395.45221;
+      // getting feature options from user
       feature=param.option.feature;
       extract=param.option.extract;
       match=param.option.match;
@@ -24,27 +26,27 @@ void MonoVisualOdometry::findKeypoints() {
     switch(feature)
     {
      case 1: //FAST
-     {int threshold=110;
+     {int threshold=130;
      FastFeatureDetector detector(threshold);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
      case 2: //SURF
-     {SurfFeatureDetector detector(3000);
+     {SurfFeatureDetector detector(2000);
      detector.detect(img1, keypoints1);
      detector.detect(img2, keypoints2);
      break;
      }
      case 3: //GFTT
-     {int maxCorners=200;
+     {int maxCorners=150;
       GoodFeaturesToTrackDetector detector(maxCorners);
       detector.detect(img1, keypoints1);
       detector.detect(img2, keypoints2);
       break;
      }
      case 4: //ORB
-     {int maxCorners=200;
+     {int maxCorners=150;
       OrbFeatureDetector detector(maxCorners);
       detector.detect(img1, keypoints1);
       detector.detect(img2, keypoints2);     
@@ -55,7 +57,7 @@ void MonoVisualOdometry::findKeypoints() {
       Ptr<FeatureDetector> detector= FeatureDetector::create("HARRIS");
       detector->detect(img1, keypoints1);
       detector->detect(img2, keypoints2);      
-     }     
+     } 
     }
 }
 
@@ -82,7 +84,7 @@ void MonoVisualOdometry::findDescriptor() {
       extractor.compute(img1, keypoints1, descriptors1);
       extractor.compute(img2, keypoints2, descriptors2);
       break;
-     }     
+     }
     }	
 }
 
@@ -109,7 +111,7 @@ void MonoVisualOdometry::findGoodMatches() {
     { 
      case 1:
      {
-     double distance=40.; //quite adjustable/variable
+     double distance=50.; //quite adjustable/variable
      double confidence=0.99; //doesnt affect much when changed
      ransacTest(matches,keypoints1,keypoints2,good_matches,distance,confidence); 
      break;
@@ -151,11 +153,36 @@ void MonoVisualOdometry::findGoodMatches() {
 	  for( int i = 0; i < descriptors1.rows; i++ )
 	  { if( matches[i].distance < 2*min_dist )
 	    { good_matches.push_back( matches[i]); }
-	  }		
+	  }
+	  break;		
      }
     }
     matches=good_matches; // update matches by good_matches    
     N=matches.size();  // no of matched feature points
+}
+
+void MonoVisualOdometry::calcOpticalFlow(){
+    int maxCorners=180;
+    GoodFeaturesToTrackDetector detector(maxCorners);
+    detector.detect(img1, keypoints1);
+    
+    // convert KeyPoint to Point2f
+    for (int i=0;i<keypoints1.size(); i++)
+       {
+        float x= keypoints1[i].pt.x;
+        float y= keypoints1[i].pt.y;
+        keypoints1_2f.push_back(cv::Point2f(x,y));
+       }
+    // LK Sparse Optical Flow   
+    vector<uchar> status; 
+    vector<float> err;
+    Size winSize=Size(21,21);
+    int maxLevel=3;
+    TermCriteria criteria=TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 30, 0.01);
+    int flags=0;
+    double minEigThreshold=1e-4;
+    cv::calcOpticalFlowPyrLK(img1, img2, keypoints1_2f, keypoints2_2f, status, err, winSize, maxLevel, criteria, flags, minEigThreshold);
+    N=keypoints2_2f.size();  // no of matched feature points
 }
 
 void MonoVisualOdometry::calcNormCoordinates() {
@@ -177,8 +204,15 @@ void MonoVisualOdometry::calcNormCoordinates() {
      // Obtaining pixel coordinates and normalised 3D coordinates of feature points
      for(size_t i = 0; i < N; i++)
      {
-         Point2f point1 = keypoints1[matches[i].queryIdx].pt;
-         Point2f point2 = keypoints2[matches[i].trainIdx].pt;
+     	 Point2f point1,point2;
+         if(!opticalFlow){
+         point1 = keypoints1[matches[i].queryIdx].pt;
+         point2 = keypoints2[matches[i].trainIdx].pt;
+         }
+         else {
+         point1 = keypoints1_2f[i];
+         point2 = keypoints2_2f[i];         
+         }
          u_old[i]=point1.x;
          v_old[i]=point1.y;
          u_new[i]=point2.x;
@@ -202,7 +236,7 @@ void MonoVisualOdometry::calcPoseVector() {
     // grad(f(x))={df/dDx,df/dDy,df/dphi,df/dZ}
     
     //initial guess
-    Dx=0;Dy=0;phi=0;Z=1; 
+    Dx=0.001;Dy=0.001;phi=0.1;Z=1.5; 
 
     // Initial error
     e=0;
@@ -263,6 +297,7 @@ void MonoVisualOdometry::run() {
     cvtColor(img1,img1,CV_BGR2GRAY);
     cvtColor(img2,img2,CV_BGR2GRAY);  
     
+  if(!opticalFlow){
     // find keypoints
     findKeypoints();  
   
@@ -274,7 +309,11 @@ void MonoVisualOdometry::run() {
   
     // find good_matches
     findGoodMatches();
-  
+  }
+  else {
+    //calculate matched feature points optical flow
+    calcOpticalFlow();
+  }
     // calc normalised 3D coordinates
     calcNormCoordinates();
   
@@ -296,7 +335,7 @@ void MonoVisualOdometry::run() {
 }
 
 //void MonoVisualOdometry::output(int N,float x_net,float y_net,float heading_net,float Z_avg1,float Z_avg2,int iteration,float run_time) {
-void MonoVisualOdometry::output(pose position) {
+void MonoVisualOdometry::output(pose& position) {
     position.N=N;
     position.iteration=count;
     position.x_net=net_Dx;
