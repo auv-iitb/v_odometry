@@ -7,6 +7,7 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/nonfree/nonfree.hpp"
+#include "opencv2/video/tracking.hpp"
 
 using namespace std;
 using namespace cv;
@@ -96,6 +97,7 @@ int N,count,feature,extract,match,outlier,solver;
 float *u_old,*v_old,*u_new,*v_new;
 float **A,**B;
 float uo,vo,fx,fy,Z,Dx,Dy,phi,e,Dx_o,Dy_o,phi_o,Z_o,gm;
+bool opticalFlow=false;
 
     if(argc < 3)
     { help();
@@ -116,6 +118,8 @@ if (argc>=8){
  outlier=atoi(argv[6]); 
  solver=atoi(argv[7]);
 }
+ vector<Point2f> keypoints1_2f,keypoints2_2f;
+  vector<DMatch> matches;
 // Intrinsic Calibration parameters for img size 320x240
 uo=157.73985;
 vo=134.19819;
@@ -132,6 +136,7 @@ fy=395.45221;
 
     // detecting keypoints
     vector<KeyPoint> keypoints1, keypoints2;
+if(!opticalFlow){
     switch(feature)
     {
      case 1: //FAST
@@ -197,7 +202,7 @@ fy=395.45221;
     }
     
     // matching descriptors
-    vector<DMatch> matches;
+   // vector<DMatch> matches;
     switch (match)
     {
      case 1: //BruteForce
@@ -271,6 +276,42 @@ fy=395.45221;
 
  matches=good_matches; // update matches by good_matches
  N=matches.size();  // no of matched feature points   
+}
+else{
+    int maxCorners=180;
+    GoodFeaturesToTrackDetector detector(maxCorners);
+    detector.detect(img1, keypoints1);
+    
+    // convert KeyPoint to Point2f
+    for (int i=0;i<keypoints1.size(); i++)
+       {
+        float x= keypoints1[i].pt.x;
+        float y= keypoints1[i].pt.y;
+        keypoints1_2f.push_back(cv::Point2f(x,y));
+       }
+       
+    // LK Sparse Optical Flow   
+    vector<uchar> status; 
+    vector<float> err;
+    Size winSize=Size(21,21);
+    int maxLevel=3;
+    TermCriteria criteria=TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 30, 0.01);
+    int flags=0;
+    double minEigThreshold=1e-4;
+    cv::calcOpticalFlowPyrLK(img1, img2, keypoints1_2f, keypoints2_2f, status, err, winSize, maxLevel, criteria, flags, minEigThreshold);
+
+    // convert Point2f to KeyPoints
+    for (int i=0;i<keypoints2_2f.size(); i++)
+       {
+        float x= keypoints2_2f[i].x;
+        float y= keypoints2_2f[i].y;
+        KeyPoint kp(x,y,1.0,-1.0,0.0,0,-1);
+        keypoints2.push_back(kp);
+       }
+      
+    N=keypoints2.size();  // no of matched feature points
+}
+
 
 // Old and new consecutive frames pixel coordinate
 u_old=new float [N]; 
@@ -287,11 +328,18 @@ for(int i=0; i<N; i++)
     B[i] = new float [3];
 }
 
+
 // Obtaining pixel coordinates of feature points
 for(size_t i = 0; i < N; i++)
-{
-    Point2f point1 = keypoints1[matches[i].queryIdx].pt;
-    Point2f point2 = keypoints2[matches[i].trainIdx].pt;
+{	Point2f point1,point2;
+   if(opticalFlow){
+    point1 = keypoints1[i].pt;
+    point2 = keypoints2[i].pt; 
+    }
+    else{
+    point1 = keypoints1[matches[i].queryIdx].pt;
+    point2 = keypoints2[matches[i].trainIdx].pt;
+    }
     u_old[i]=point1.x;
     v_old[i]=point1.y;
     u_new[i]=point2.x;
@@ -313,7 +361,7 @@ for(size_t i = 0; i < N; i++)
 // grad(f(x))={df/dDx,df/dDy,df/dphi,df/dZ}
 
 //initial guess
-Dx=0;Dy=0;phi=0;Z=1; 
+Dx=0.01;Dy=0.01;phi=0.01;Z=1; 
 
 // Initial error
 e=0;
@@ -323,14 +371,16 @@ for(size_t i = 0; i < N; i++){
 
 // Iterate x_vect={Dx,Dy,phi,Z} using gradient functions until error<0.01
 count=0;
+float e_old=0;
 //gm=0.005;
-while(e>=0.01){
+while(e>=0.01&&e_old!=e){
 	count++;
+	e_old=e;	
 //Old x_vect={Dx,Dy,phi,Z}
  Dx_o=Dx;Dy_o=Dy;phi_o=phi;Z_o=Z;
 switch (solver)
 {
- case 1: gm=0.005; // Gradient Descent
+ case 1: gm=0.001; // Gradient Descent
  break;
  case 2: gm=1/e; // Newton-Raphson
  break;
@@ -340,21 +390,20 @@ switch (solver)
  Dx=Dx_o-gm*df_dDx(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
  Dy=Dy_o-gm*df_dDy(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
  phi=phi_o-gm*df_dphi(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
- Z=Z_o-gm*df_dZ(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
+// Z=Z_o-gm*df_dZ(Dx_o,Dy_o,phi_o,Z_o,A,B,N);
 
 // Find error
  e=0;
  for(size_t i = 0; i < N; i++){
  e =e+(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))*(Dx-Z*(A[i][0]*cos(phi)-A[i][1]*sin(phi)-B[i][0]))+(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]))*(Dy-Z*(A[i][0]*sin(phi)+A[i][1]*cos(phi)-B[i][1]));
  }
-//cout<<e<<"\t";
+cout<<e<<"\t";
 }
 
 time=clock()-time;
-cout<<N<<"\n"<<Dx<<"\n"<<Dy<<"\n"<<phi<<"\n"<<Z<<"\n";
-cout<<e<<"\n"<<count<<"\n";
-cout<<((float)time)/CLOCKS_PER_SEC<<"\n";
-
+cout<<"N="<<N<<"\t"<<"Dx="<<Dx<<"\t"<<"Dy="<<Dy<<"\t"<<"phi="<<phi<<"\t"<<"Z="<<Z<<"\t";
+cout<<"e="<<e<<"\t"<<"iteratn="<<count<<"\t";
+cout<<"time="<<((float)time)/CLOCKS_PER_SEC<<"\n";
 
     // drawing the rmatches
     namedWindow("matches", 1);

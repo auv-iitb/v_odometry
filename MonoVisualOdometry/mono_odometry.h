@@ -33,13 +33,14 @@ public:
  */ 
   
   struct options {  
-    int feature,extract,match,outlier,solver; // options for feature points usage and solving methods
+    int feature,extract,match,outlier,method,solver; // options for feature points usage and solving methods
     options () { 
     //Default option values
     feature=1;
     extract=1;
     match=1;
     outlier=1;
+    method=1;
     solver=1;
     }
   };
@@ -55,10 +56,11 @@ public:
     int N,iteration;
     float x_net,y_net,heading_net,Z_avg1,Z_avg2,run_time;  // net(absolute) Dx,Dy,phi wrt to start frame
     float x_rel,y_rel,heading_rel;	// relative Dx,Dy,phi wrt to previous frame
+    float x_scaled,y_scaled,error;
     cv::Mat rot;
     pose () { 
     //Default option values
-    N=0;
+    N=0;	
     iteration=0;
     x_net=0;
     y_net=0;
@@ -70,6 +72,9 @@ public:
     y_rel=0;
     heading_rel=0;  
     rot=(0,0,0,0,0,0);
+    x_scaled=0;
+    y_scaled=0;
+    error=0;
     }
   };
   
@@ -116,6 +121,21 @@ public:
   // estimate Rotation using estimateRigidTransform
   void estimateTransformMatrix();
   
+  // calculate rotation and actual translation
+  void rotationActualTranslation();
+
+  // calculate rotation and scaled translation
+  void rotationScaledTranslation();
+  
+  // calculate rotation and scaled translation with regularization term
+  void rotationScaledTranslation_reg();  
+/*  
+  // calculate only rotation assuming no translation
+  void rotationNoTranslation();
+  
+  // calculate rotation for small translation
+  void rotationSmallTranslation();
+ */ 
   // get output 
   void output(pose& );
   
@@ -126,6 +146,9 @@ protected:
     float df_dDy(float Dx,float Dy, float phi, float Z, float **A, float **B, int N);
     float df_dphi(float Dx,float Dy, float phi, float Z, float **A, float **B, int N);
     float df_dZ(float Dx,float Dy, float phi, float Z, float **A, float **B, int N);        
+    
+    // second derivative of error function wrt phi
+    float d2f_d2phi(float Dx,float Dy, float phi, float Z, float **A, float **B, int N);
     
     //ransacTest for outlier removal
     void ransacTest(const std::vector<cv::DMatch> matches,const std::vector<cv::KeyPoint>&keypoints1,const std::vector<cv::KeyPoint>& keypoints2,std::vector<cv::DMatch>& goodMatches,double distance,double confidence);
@@ -139,10 +162,11 @@ protected:
     float run_time;	//time for single run
     int N;	// no of good_matches obtained
     int count; 	//no of iterations for (solver ex gradient descent) convergence
-    int feature,extract,match,outlier,solver; 	// options for feature points usage and solving methods
+    int feature,extract,match,outlier,method,solver; 	// options for feature points usage and solving methods
     float *u_old,*v_old,*u_new,*v_new; 	// old and new pixel coordinates (array)
     float **A,**B; 	//A(Nx2):old [X/Z Y/Z 1] & B(Nx2):new [Xn/Z Yn/Z 1]
     float Dx,Dy,phi,Z,Dx_o,Dy_o,phi_o,Z_o; 	// old and new camera translation and rotation params and depth Z
+    float tx,ty,tx_o,ty_o; 	// old and new Scaled camera translation
     float e; 	// error while solving minimization problem
     float gm; 	// param for controlling gradient descent/newton-raphson method
     std::vector<cv::KeyPoint> keypoints1, keypoints2; 	//keypoints detected in two consecutive images 
@@ -155,6 +179,8 @@ protected:
     float uo; // principal point (u-coordinate)
     float vo; // principal point (v-coordinate)
     cv::Mat rot; 	// transformation calculated using estimateRigidTransform
+    int *fmatches;	// optical flow matches
+    float lam; 		// regularization term weightage
 //    vector<uchar> status; // flag to check whether optical flow matching is found
 
 private:
