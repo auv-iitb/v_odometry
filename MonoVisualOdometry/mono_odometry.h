@@ -53,7 +53,9 @@ public:
   
   struct pose {  
     int N,iteration;
-    float x_net,y_net,heading_net,Z_avg1,Z_avg2,run_time;
+    float x_net,y_net,heading_net,Z_avg1,Z_avg2,run_time;  // net(absolute) Dx,Dy,phi wrt to start frame
+    float x_rel,y_rel,heading_rel;	// relative Dx,Dy,phi wrt to previous frame
+    cv::Mat rot;
     pose () { 
     //Default option values
     N=0;
@@ -63,7 +65,11 @@ public:
     heading_net=0;
     Z_avg1=0;
     Z_avg2=0;
-    run_time=0;    
+    run_time=0;  
+    x_rel=0;
+    y_rel=0;
+    heading_rel=0;  
+    rot=(0,0,0,0,0,0);
     }
   };
   
@@ -99,13 +105,19 @@ public:
   void calcPoseVector();
   
   // update motion history
-  void update_Motion();
+  void updateMotion();
+  
+  // calculate feature matches using optical flow
+  void calcOpticalFlow();
   
   // calculate feature matches using optical flow
   void calcOpticalFlow();
   
   // run the entire process
   void run(); 
+  
+  // estimate Rotation using estimateRigidTransform
+  void estimateTransformMatrix();
   
   // get output 
   void output(pose& );
@@ -123,7 +135,8 @@ protected:
 
 
 //(made public) int nframes; 	// overall count of frames taken
-    float net_Dx,net_Dy,net_phi,net_Z1,net_Z2,Zsum,Rcos,Rsin; 	// net pose params at any instant (wrt initial pose)
+    float net_Dx,net_Dy,net_phi,net_Z1,net_Z2,Zsum,Rcos,Rsin; 	// net pose params at any instant (wrt start pose)
+    float rel_Dx,rel_Dy,rel_phi;	// relative Dx,Dy,phi wrt to previous frame
 //(made public) cv::Mat img1,img2; 	//old(1) and new(2) frames obtained from camera
     clock_t time; 	// variable to track time taken to run code
     float run_time;	//time for single run
@@ -135,15 +148,16 @@ protected:
     float Dx,Dy,phi,Z,Dx_o,Dy_o,phi_o,Z_o; 	// old and new camera translation and rotation params and depth Z
     float e; 	// error while solving minimization problem
     float gm; 	// param for controlling gradient descent/newton-raphson method
-    cv::vector<cv::KeyPoint> keypoints1, keypoints2; 	//keypoints detected in two consecutive images 
-    cv::vector<cv::Point2f> keypoints1_2f,keypoints2_2f;	//keypoints for calcOpticalFlow
+    std::vector<cv::KeyPoint> keypoints1, keypoints2; 	//keypoints detected in two consecutive images 
+    std::vector<cv::Point2f> keypoints1_2f,keypoints2_2f;	//keypoints for calcOpticalFlow
     cv::Mat descriptors1, descriptors2; 	//descriptors calculated for the corresponding keypoints
-    cv::vector<cv::DMatch> matches;      //matches among the keypoints
-    cv::vector<cv::DMatch > good_matches;    //good_matches among the matches
+    std::vector<cv::DMatch> matches;      //matches among the keypoints
+    std::vector<cv::DMatch > good_matches;    //good_matches among the matches
     float fx;  // f/dx (in pixels)
     float fy;  // f/dy (in pixels)    
     float uo; // principal point (u-coordinate)
     float vo; // principal point (v-coordinate)
+    cv::Mat rot; 	// transformation calculated using estimateRigidTransform
 //    vector<uchar> status; // flag to check whether optical flow matching is found
 
 private:
