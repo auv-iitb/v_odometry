@@ -110,9 +110,6 @@ public:
   // calculate feature matches using optical flow
   void calcOpticalFlow();
   
-  // calculate feature matches using optical flow
-  void calcOpticalFlow();
-  
   // run the entire process
   void run(); 
   
