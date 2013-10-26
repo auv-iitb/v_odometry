@@ -57,6 +57,7 @@ public:
     float x_net,y_net,heading_net,Z_avg1,Z_avg2,run_time;  // net(absolute) Dx,Dy,phi wrt to start frame
     float x_rel,y_rel,heading_rel;	// relative Dx,Dy,phi wrt to previous frame
     float x_scaled,y_scaled,error;
+    bool head_status;
     cv::Mat rot;
     pose () { 
     //Default option values
@@ -75,6 +76,7 @@ public:
     x_scaled=0;
     y_scaled=0;
     error=0;
+    head_status=true;
     }
   };
   
@@ -87,9 +89,6 @@ public:
   
   // deconstructor
   ~MonoVisualOdometry ();
-  
-  //function to get image from ROS
-  
   
   // find keypoints
   void findKeypoints();  
@@ -162,7 +161,7 @@ protected:
     float run_time;	//time for single run
     int N;	// no of good_matches obtained
     int count; 	//no of iterations for (solver ex gradient descent) convergence
-    int feature,extract,match,outlier,solver; 	// options for feature points usage and solving methods
+    int feature,extract,match,outlier,method,solver; 	// options for feature points usage and solving methods
     float *u_old,*v_old,*u_new,*v_new; 	// old and new pixel coordinates (array)
     float **A,**B; 	//A(Nx2):old [X/Z Y/Z 1] & B(Nx2):new [Xn/Z Yn/Z 1]
     float Dx,Dy,phi,Z,Dx_o,Dy_o,phi_o,Z_o; 	// old and new camera translation and rotation params and depth Z
@@ -179,8 +178,10 @@ protected:
     float uo; // principal point (u-coordinate)
     float vo; // principal point (v-coordinate)
     cv::Mat rot; 	// transformation calculated using estimateRigidTransform
-    int *fmatches;	// optical flow matches
+    std::vector<int> fmatches;	// optical flow matches
     float lam; 		// regularization term weightage
+    cv::Mat mask;    // mask image
+    bool phi_status;	// flag to check if phi values are reliable or not
 //    vector<uchar> status; // flag to check whether optical flow matching is found
 
 private:

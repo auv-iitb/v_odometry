@@ -16,7 +16,6 @@ class MonoVisualOdometry {
 public:
 
   // camera parameters (all are mandatory / need to be supplied)
- /*
   struct calibration {  
     float fx;  // f/dx (in pixels)
     float fy;  // f/dy (in pixels)    
@@ -28,9 +27,7 @@ public:
       fx=391.54809;
       fy=395.45221;
     }
-  };
-  
- */ 
+  }; 
   
   struct options {  
     int feature,extract,match,outlier,method,solver; // options for feature points usage and solving methods
@@ -49,7 +46,7 @@ public:
   // general parameters
   struct parameters {
     MonoVisualOdometry::options   option;           // options for feature usage
-    //MonoVisualOdometry::calibration calib;          // camera calibration parameters
+    MonoVisualOdometry::calibration calib;          // camera calibration parameters
   };
   
   struct pose {  
@@ -57,6 +54,7 @@ public:
     float x_net,y_net,heading_net,Z_avg1,Z_avg2,run_time;  // net(absolute) Dx,Dy,phi wrt to start frame
     float x_rel,y_rel,heading_rel;	// relative Dx,Dy,phi wrt to previous frame
     float x_scaled,y_scaled,error;
+    bool head_status;
     cv::Mat rot;
     pose () { 
     //Default option values
@@ -75,6 +73,7 @@ public:
     x_scaled=0;
     y_scaled=0;
     error=0;
+    head_status=true;
     }
   };
   
@@ -87,9 +86,6 @@ public:
   
   // deconstructor
   ~MonoVisualOdometry ();
-  
-  //function to get image from ROS
-  
   
   // find keypoints
   void findKeypoints();  
@@ -179,8 +175,10 @@ protected:
     float uo; // principal point (u-coordinate)
     float vo; // principal point (v-coordinate)
     cv::Mat rot; 	// transformation calculated using estimateRigidTransform
-    int *fmatches;	// optical flow matches
+    std::vector<int> fmatches;	// optical flow matches
     float lam; 		// regularization term weightage
+    cv::Mat mask;    // mask image
+    bool phi_status;	// flag to check if phi values are reliable or not
 //    vector<uchar> status; // flag to check whether optical flow matching is found
 
 private:
