@@ -14,4 +14,9 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 #add_executable(vis_odom_test src/test_odometry.cpp)
 #target_link_libraries(vis_odom_test visual_odometry ${OpenCV_LIBRARIES})
 
-add_library(mono_visual_odometry src/mono_odometry.cpp
+include_directories(include)
+
+add_library(mono_visual_odometry SHARED src/mono_odometry.cpp)
+target_link_libraries(mono_visual_odometry ${OpenCV_LIBRARIES})
+add_executable(test_odometry src/test_MonoVisualOdometry.cpp)
+target_link_libraries(test_odometry ${OpenCV_LIBRARIES} mono_visual_odometry)
