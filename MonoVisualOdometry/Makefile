@@ -1,4 +1,4 @@
-LDIR=-L/usr/local/lib
+LDIR=-L/opt/ros/hydro/lib/
 
 LIBS=-lopencv_calib3d -lopencv_core -lopencv_features2d -lopencv_flann -lopencv_highgui -lopencv_imgproc -lopencv_nonfree -lopencv_video
 
